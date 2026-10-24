@@ -67,8 +67,24 @@ Anti-fraud: unique email, no self-referral, unique referee, ledger idempotency k
 
 ## Deploy (Vercel)
 
-1. Push repo to GitHub
-2. Import in Vercel
-3. Set `NEXT_PUBLIC_APP_URL` to the deployment URL
-4. (Recommended) Create a Turso DB, run `DATABASE_URL=… npx prisma db push` against it, set `TURSO_*` env vars
-5. Deploy — share `/demo` + `/proposal` in your application
+Repo: https://github.com/Odelf18/prelaunch
+
+**Option A — CLI (fastest)**
+
+```bash
+npm i -g vercel
+vercel login
+vercel --prod
+```
+
+Then in the Vercel project settings, set:
+
+- `NEXT_PUBLIC_APP_URL` = `https://<your-deployment>.vercel.app`
+- (Recommended) `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` for persistent DB  
+  Without Turso, the app bootstraps from `prisma/demo-seed.db` into `/tmp` (fine for demos; resets on cold starts).
+
+**Option B — Dashboard**
+
+1. Import https://github.com/Odelf18/prelaunch in [vercel.com/new](https://vercel.com/new)
+2. Set the env vars above
+3. Deploy — share `/demo` + `/proposal` in your application

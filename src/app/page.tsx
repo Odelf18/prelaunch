@@ -29,6 +29,14 @@ export default function HomePage() {
           >
             Read proposal answers
           </Link>
+          <a
+            href="https://github.com/Odelf18/prelaunch"
+            target="_blank"
+            rel="noreferrer"
+            className="ghost-btn rounded-xl px-6 py-3.5 text-sm"
+          >
+            GitHub
+          </a>
         </div>
       </main>
     </>

@@ -61,15 +61,22 @@ export function DemoShell() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    async function load(attempt = 0) {
       try {
         const res = await fetch("/api/demo/state");
+        if (!res.ok) throw new Error(`status ${res.status}`);
         const data = await res.json();
         if (!cancelled) applyState(data);
       } catch {
-        if (!cancelled) setError("Failed to load demo state");
+        if (cancelled) return;
+        if (attempt < 1) {
+          await new Promise((r) => setTimeout(r, 250));
+          return load(attempt + 1);
+        }
+        setError("Failed to load demo state");
       }
-    })();
+    }
+    void load();
     return () => {
       cancelled = true;
     };
