@@ -1,6 +1,8 @@
 # Proposal — Fintech Waitlist + Referral + Rewards Backend
 
-**Live demo:** run locally → `/demo`, or deploy from https://github.com/Odelf18/prelaunch (`vercel --prod`)  
+**Live demo:** https://prelaunch-mu.vercel.app/demo  
+**Proposal page:** https://prelaunch-mu.vercel.app/proposal  
+**Repo:** https://github.com/Odelf18/prelaunch  
 **Stack demo:** Next.js · Prisma · SQLite/Turso · Resend · SSE event stream
 
 This document answers the nine proposal questions. The accompanying live demo implements the same architecture so you can verify the logic, not just read about it.

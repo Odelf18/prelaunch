@@ -67,24 +67,22 @@ Anti-fraud: unique email, no self-referral, unique referee, ledger idempotency k
 
 ## Deploy (Vercel)
 
-Repo: https://github.com/Odelf18/prelaunch
+**Production:** https://prelaunch-mu.vercel.app  
+**Repo:** https://github.com/Odelf18/prelaunch
 
-**Option A — CLI (fastest)**
+Share these links in your application:
+
+- Demo: https://prelaunch-mu.vercel.app/demo  
+- Proposal answers: https://prelaunch-mu.vercel.app/proposal  
+
+Redeploy:
 
 ```bash
-npm i -g vercel
-vercel login
 vercel --prod
 ```
 
-Then in the Vercel project settings, set:
+Env vars (Vercel project):
 
-- `NEXT_PUBLIC_APP_URL` = `https://<your-deployment>.vercel.app`
+- `NEXT_PUBLIC_APP_URL` = `https://prelaunch-mu.vercel.app`
 - (Recommended) `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` for persistent DB  
   Without Turso, the app bootstraps from `prisma/demo-seed.db` into `/tmp` (fine for demos; resets on cold starts).
-
-**Option B — Dashboard**
-
-1. Import https://github.com/Odelf18/prelaunch in [vercel.com/new](https://vercel.com/new)
-2. Set the env vars above
-3. Deploy — share `/demo` + `/proposal` in your application

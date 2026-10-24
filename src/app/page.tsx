@@ -19,6 +19,9 @@ export default function HomePage() {
           rewards system. One click simulates a referred signup and streams
           every database write.
         </p>
+        <p className="mono mt-3 text-xs text-[var(--accent)]">
+          Live · prelaunch-mu.vercel.app
+        </p>
         <div className="mt-10 flex flex-wrap gap-4">
           <Link href="/demo" className="glow-btn rounded-xl px-6 py-3.5 text-sm">
             Open live system demo
