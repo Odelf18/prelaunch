@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum ReferralStatus {
+  pending
+  converted
+  rejected
+}
+
+enum RewardType {
+  signup
+  profile
+  referral_coins
+  referral_cash
+}
+
+enum EmailStatus {
+  pending
+  sent
+  failed
+  mocked
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  fullName           String?
+  phone              String?
+  referralCode       String    @unique
+  referredById       String?
+  coinsBalance       Int       @default(0)
+  cashEarnedCents    Int       @default(0)
+  profileCompletedAt DateTime?
+  city               String?
+  region             String?
+  country            String?
+  ipHash             String?
+  dashboardToken     String    @unique
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  referredBy       User?           @relation("Referrals", fields: [referredById], references: [id])
+  referrals        User[]          @relation("Referrals")
+  referralsMade    Referral[]      @relation("Referrer")
+  referralReceived Referral?       @relation("Referee")
+  ledgerEntries    RewardLedger[]
+  emails           EmailOutbox[]
+  integrityNode    IntegrityNode?
+
+  @@index([referredById])
+  @@index([createdAt])
+}
+
+model Referral {
+  id               String         @id @default(cuid())
+  referrerId       String
+  refereeId        String         @unique
+  status           ReferralStatus @default(pending)
+  coinsAwarded     Int            @default(0)
+  cashAwardedCents Int            @default(0)
+  createdAt        DateTime       @default(now())
+  convertedAt      DateTime?
+
+  referrer User @relation("Referrer", fields: [referrerId], references: [id])
+  referee  User @relation("Referee", fields: [refereeId], references: [id])
+
+  @@index([referrerId])
+  @@index([status])
+}
+
+model RewardLedger {
+  id             String     @id @default(cuid())
+  userId         String
+  type           RewardType
+  amountCoins    Int        @default(0)
+  amountCents    Int        @default(0)
+  idempotencyKey String     @unique
+  meta           String     @default("{}")
+  createdAt      DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model EmailOutbox {
+  id         String      @id @default(cuid())
+  userId     String
+  template   String
+  toEmail    String
+  payload    String      @default("{}")
+  status     EmailStatus @default(pending)
+  providerId String?
+  createdAt  DateTime    @default(now())
+  sentAt     DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+model IntegrityNode {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  parentUserId String?
+  nodeHash     String
+  prevHash     String
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([parentUserId])
+  @@index([createdAt])
+}

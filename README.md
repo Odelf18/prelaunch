@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Prelaunch Engine
 
-## Getting Started
+Interactive MVP demo of a **fintech waitlist + referral + rewards** backend — built to accompany a job proposal.
 
-First, run the development server:
+## Live surfaces
+
+| Route | Purpose |
+|-------|---------|
+| `/` | Pitch + CTAs |
+| `/demo` | One-click simulate signup, live SSE feed, referral tree, ledger, admin metrics |
+| `/proposal` | Answers to the nine proposal questions |
+| `/dashboard/[token]` | User dashboard (from welcome email link) |
+| `/join/[code]` | Public referral signup |
+
+Full written proposal: [`PROPOSAL.md`](./PROPOSAL.md)
+
+## Stack
+
+- Next.js (App Router) + TypeScript
+- Prisma + SQLite (local) / Turso libSQL (optional prod)
+- Resend (optional; mocks without API key)
+- Framer Motion + SSE for the live demo
+
+## Local setup
 
 ```bash
+npm install
+cp .env.example .env
+npx prisma db push
+npm run db:seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000/demo](http://localhost:3000/demo) and click **Simulate referred signup**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Next.js dev server |
+| `npm run build` | Production build |
+| `npm run db:push` | Push Prisma schema |
+| `npm run db:seed` | Seed demo users + referral chain |
+| `npm run db:seed-file` | Refresh `prisma/demo-seed.db` for Vercel `/tmp` bootstrap |
 
-## Learn More
+## Environment
 
-To learn more about Next.js, take a look at the following resources:
+See `.env.example`. Important vars:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `DATABASE_URL` — local SQLite
+- `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` — persistent prod DB on Vercel
+- `RESEND_API_KEY` — real welcome emails
+- `NEXT_PUBLIC_APP_URL` — absolute links in emails / referral URLs
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Without Turso on Vercel, the app copies `prisma/demo-seed.db` into `/tmp` (ephemeral but enough for recruiter demos). Prefer Turso for persistence.
 
-## Deploy on Vercel
+## Reward rules (implemented)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Event | Reward |
+|-------|--------|
+| Signup | +100 coins + unique referral code |
+| Profile complete (once) | +400 coins |
+| Successful referral | +500 coins + $20 cash to referrer |
+| Milestones | 2,500 → 2 mo premium · 3,000 → 3 mo premium |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Anti-fraud: unique email, no self-referral, unique referee, ledger idempotency keys.
+
+## Deploy (Vercel)
+
+1. Push repo to GitHub
+2. Import in Vercel
+3. Set `NEXT_PUBLIC_APP_URL` to the deployment URL
+4. (Recommended) Create a Turso DB, run `DATABASE_URL=… npx prisma db push` against it, set `TURSO_*` env vars
+5. Deploy — share `/demo` + `/proposal` in your application
