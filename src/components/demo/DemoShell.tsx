@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { APP_NAME } from "@/lib/constants";
 import { ReferralTree } from "./ReferralTree";
@@ -15,6 +15,7 @@ export function DemoShell() {
   const [tree, setTree] = useState<TreeNode[]>([]);
   const [ledger, setLedger] = useState<LedgerRow[]>([]);
   const [events, setEvents] = useState<FeedEvent[]>([]);
+  const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set());
@@ -23,7 +24,9 @@ export function DemoShell() {
   const [steps, setSteps] = useState<CascadeStep[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [mode, setMode] = useState<"root" | "referred" | null>(null);
-  const empty = (stats?.totalSignups ?? 0) === 0 && tree.length === 0;
+  const bootGen = useRef(0);
+
+  const empty = ready && (stats?.totalSignups ?? 0) === 0 && tree.length === 0;
 
   const applyState = useCallback(
     (data: {
@@ -41,34 +44,45 @@ export function DemoShell() {
   );
 
   useEffect(() => {
+    const gen = ++bootGen.current;
     let cancelled = false;
-    async function boot() {
+
+    async function load() {
       try {
-        // Always open the theater on an empty DB — no leftover fake profiles
-        const resetRes = await fetch("/api/demo/reset", { method: "POST" });
-        if (!resetRes.ok) throw new Error("reset failed");
-        const data = await resetRes.json();
-        if (!cancelled) {
+        const wipedKey = "prelaunch_demo_wiped_v3";
+        const already =
+          typeof window !== "undefined" && sessionStorage.getItem(wipedKey);
+
+        if (!already) {
+          const resetRes = await fetch("/api/demo/reset", { method: "POST" });
+          if (resetRes.ok) {
+            sessionStorage.setItem(wipedKey, "1");
+            const data = await resetRes.json();
+            if (!cancelled && bootGen.current === gen) {
+              applyState(data);
+              setEvents(data.events ?? []);
+              setReady(true);
+              return;
+            }
+          }
+        }
+
+        const res = await fetch("/api/demo/state");
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        const data = await res.json();
+        if (!cancelled && bootGen.current === gen) {
           applyState(data);
-          setSteps([]);
-          setActiveIndex(-1);
-          setHighlightId(null);
-          setMode(null);
-          setLastMessage(null);
-          setEvents(data.events ?? []);
+          setReady(true);
         }
       } catch {
-        if (cancelled) return;
-        try {
-          const res = await fetch("/api/demo/state");
-          const data = await res.json();
-          if (!cancelled) applyState(data);
-        } catch {
-          if (!cancelled) setError("Failed to load demo state");
+        if (!cancelled && bootGen.current === gen) {
+          setError("Failed to load demo state");
+          setReady(true);
         }
       }
     }
-    void boot();
+
+    void load();
     return () => {
       cancelled = true;
     };
@@ -90,29 +104,28 @@ export function DemoShell() {
     return () => es.close();
   }, []);
 
-  async function playSteps(
-    nextSteps: CascadeStep[],
-    after?: () => void,
-  ) {
+  async function playSteps(nextSteps: CascadeStep[]) {
     setSteps(nextSteps);
     setActiveIndex(-1);
     for (let i = 0; i < nextSteps.length; i++) {
       setActiveIndex(i);
-      await new Promise((r) => setTimeout(r, 850));
+      await new Promise((r) => setTimeout(r, 900));
     }
-    after?.();
   }
 
   async function runSimulate(opts?: {
     completeProfile?: boolean;
     fraud?: "duplicate" | "self";
   }) {
+    if (!ready || busy) return;
     setBusy(true);
     setError(null);
     setLastMessage(null);
     setMode(null);
     setSteps([]);
     setActiveIndex(-1);
+
+    const prevLedgerIds = new Set(ledger.map((l) => l.id));
 
     try {
       const res = await fetch("/api/demo/simulate", {
@@ -125,10 +138,12 @@ export function DemoShell() {
 
       const nextSteps = (data.steps as CascadeStep[]) ?? [];
 
+      // Apply DB snapshot immediately so tree/ledger/admin stay in sync
+      applyState(data);
+
       if (data.fraud) {
         setLastMessage(`Blocked: ${data.fraud.message}`);
         await playSteps(nextSteps);
-        applyState(data);
       } else {
         const userId = data.result?.user?.id as string | undefined;
         const nextMode = data.result?.mode as "root" | "referred";
@@ -140,17 +155,14 @@ export function DemoShell() {
             : `Referred signup: ${data.result?.user?.email} ← ${data.result?.referrerCode}`,
         );
 
-        // Reveal cascade first, then snap tree/ledger into place
-        await playSteps(nextSteps, () => {
-          const newLedger = (data.ledger as LedgerRow[]) ?? [];
-          const prevIds = new Set(ledger.map((l) => l.id));
-          const fresh = new Set(
-            newLedger.filter((l) => !prevIds.has(l.id)).map((l) => l.id),
-          );
-          setFlashIds(fresh);
-          setTimeout(() => setFlashIds(new Set()), 3200);
-          applyState(data);
-        });
+        const newLedger = (data.ledger as LedgerRow[]) ?? [];
+        const fresh = new Set(
+          newLedger.filter((l) => !prevLedgerIds.has(l.id)).map((l) => l.id),
+        );
+        setFlashIds(fresh);
+        setTimeout(() => setFlashIds(new Set()), 3500);
+
+        await playSteps(nextSteps);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
@@ -160,6 +172,7 @@ export function DemoShell() {
   }
 
   async function reset() {
+    if (busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -173,6 +186,7 @@ export function DemoShell() {
       setMode(null);
       setLastMessage("Wiped — back to an empty database.");
       setEvents(data.events ?? []);
+      sessionStorage.setItem("prelaunch_demo_wiped_v3", "1");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Reset failed");
     } finally {
@@ -180,17 +194,18 @@ export function DemoShell() {
     }
   }
 
-  const primaryLabel = busy
-    ? activeIndex >= 0 && steps[activeIndex]
-      ? steps[activeIndex]!.title
-      : "Running cascade…"
-    : empty
-      ? "Create first user (empty DB)"
-      : "Simulate referred signup";
+  const primaryLabel = !ready
+    ? "Preparing empty database…"
+    : busy
+      ? activeIndex >= 0 && steps[activeIndex]
+        ? steps[activeIndex]!.title
+        : "Running cascade…"
+      : empty
+        ? "Create first user (empty DB)"
+        : "Simulate referred signup";
 
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-10 px-4 pb-24 md:px-8">
-      {/* Hero */}
       <section className="relative pt-4 md:pt-8">
         <p className="mono text-xs uppercase tracking-[0.28em] text-[var(--accent)]">
           {APP_NAME}
@@ -208,7 +223,7 @@ export function DemoShell() {
           <button
             type="button"
             className="glow-btn rounded-2xl px-7 py-4 text-base md:text-lg"
-            disabled={busy}
+            disabled={!ready || busy}
             onClick={() => runSimulate()}
           >
             {primaryLabel}
@@ -216,7 +231,7 @@ export function DemoShell() {
           <button
             type="button"
             className="ghost-btn rounded-2xl px-5 py-4 text-base"
-            disabled={busy || empty}
+            disabled={!ready || busy || empty}
             onClick={() => runSimulate({ completeProfile: true })}
           >
             Referral + complete profile
@@ -224,7 +239,7 @@ export function DemoShell() {
           <button
             type="button"
             className="ghost-btn rounded-2xl px-5 py-4 text-base"
-            disabled={busy}
+            disabled={!ready || busy}
             onClick={reset}
           >
             Reset to empty
@@ -259,7 +274,6 @@ export function DemoShell() {
         )}
       </section>
 
-      {/* Cascade theater — main wow surface */}
       <CascadeStage
         steps={steps}
         activeIndex={activeIndex}
@@ -267,10 +281,8 @@ export function DemoShell() {
         mode={mode}
       />
 
-      {/* Tree — full width, large */}
       <ReferralTree nodes={tree} highlightId={highlightId} />
 
-      {/* Feed + ledger — large readable panels */}
       <section className="grid gap-6 xl:grid-cols-2">
         <LiveFeed events={events} />
         <LedgerPanel rows={ledger} flashIds={flashIds} />
@@ -290,7 +302,7 @@ export function DemoShell() {
           <button
             type="button"
             className="ghost-btn rounded-xl px-4 py-3 text-sm md:text-base"
-            disabled={busy || empty}
+            disabled={!ready || busy || empty}
             onClick={() => runSimulate({ fraud: "duplicate" })}
           >
             Try duplicate email
@@ -298,7 +310,7 @@ export function DemoShell() {
           <button
             type="button"
             className="ghost-btn rounded-xl px-4 py-3 text-sm md:text-base"
-            disabled={busy || empty}
+            disabled={!ready || busy || empty}
             onClick={() => runSimulate({ fraud: "self" })}
           >
             Try self-referral
