@@ -13,7 +13,7 @@ export function LiveFeed({ events }: { events: FeedEvent[] }) {
           Live event stream
         </p>
         <p className="mt-1 text-base text-[var(--muted)] md:text-lg">
-          Every write as it happens — full messages, full SQL
+          Every write as it happens - full messages, full SQL
         </p>
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto p-5">
@@ -49,7 +49,7 @@ export function LiveFeed({ events }: { events: FeedEvent[] }) {
         </AnimatePresence>
         {shown.length === 0 && (
           <p className="p-8 text-center text-lg text-[var(--muted)]">
-            Event stream is quiet — run a signup to fill it.
+            Event stream is quiet - run a signup to fill it.
           </p>
         )}
       </div>

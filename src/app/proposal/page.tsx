@@ -22,11 +22,6 @@ const QA: { q: string; a: ReactNode }[] = [
           and click <strong>Simulate referred signup</strong> to watch every
           write hit the database.
         </p>
-        <p className="mt-3 text-sm text-[var(--muted)]">
-          Before sending your application, replace the placeholders in{" "}
-          <code className="mono text-[var(--accent)]">PROPOSAL.md</code> with
-          1–2 real past projects.
-        </p>
       </>
     ),
   },
@@ -36,19 +31,19 @@ const QA: { q: string; a: ReactNode }[] = [
       <>
         <ul className="list-disc space-y-2 pl-5">
           <li>
-            <strong>Next.js + TypeScript</strong> — API, dashboards, and demo in
+            <strong>Next.js + TypeScript</strong> - API, dashboards, and demo in
             one deployable unit (Vercel-native).
           </li>
           <li>
-            <strong>Prisma + SQLite → Turso/libSQL</strong> — clear SQL schema,
+            <strong>Prisma + SQLite → Turso/libSQL</strong> - clear SQL schema,
             serverless-friendly production DB, Postgres-migratable later.
           </li>
           <li>
-            <strong>Resend</strong> — transactional welcome emails with an
+            <strong>Resend</strong> - transactional welcome emails with an
             outbox table for reliability.
           </li>
           <li>
-            <strong>IP geo (ipapi.co)</strong> — city/region/country for waitlist
+            <strong>IP geo (ipapi.co)</strong> - city/region/country for waitlist
             analytics; hashed IP at rest.
           </li>
         </ul>
@@ -64,25 +59,27 @@ const QA: { q: string; a: ReactNode }[] = [
     q: "3. How would you structure the database?",
     a: (
       <>
-        <p>Core models in <code className="mono">prisma/schema.prisma</code>:</p>
+        <p>
+          Core models in <code className="mono">prisma/schema.prisma</code>:
+        </p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>
-            <strong>User</strong> — unique email, referral code, balances, geo,
+            <strong>User</strong> - unique email, referral code, balances, geo,
             dashboard token
           </li>
           <li>
-            <strong>Referral</strong> — referrer/referee, status, awards,
+            <strong>Referral</strong> - referrer/referee, status, awards,
             timestamps (<code className="mono">refereeId</code> unique)
           </li>
           <li>
-            <strong>RewardLedger</strong> — append-only credits with unique
+            <strong>RewardLedger</strong> - append-only credits with unique
             idempotency keys
           </li>
           <li>
-            <strong>EmailOutbox</strong> — template, payload, provider status
+            <strong>EmailOutbox</strong> - template, payload, provider status
           </li>
           <li>
-            <strong>IntegrityNode</strong> — hash chain for auditability
+            <strong>IntegrityNode</strong> - hash chain for auditability
           </li>
         </ul>
         <p className="mt-3">
@@ -117,7 +114,7 @@ const QA: { q: string; a: ReactNode }[] = [
     q: "5. What service would you use for automated welcome emails?",
     a: (
       <p>
-        <strong>Resend</strong> — simple API, strong DX, solid transactional
+        <strong>Resend</strong> - simple API, strong DX, solid transactional
         deliverability. Architecture uses an outbox row first, then send. Without
         an API key, the demo mocks delivery but still records outbox rows so the
         flow stays visible. Postmark/SendGrid are solid alternatives.
@@ -131,7 +128,7 @@ const QA: { q: string; a: ReactNode }[] = [
         Extract IP from <code className="mono">x-forwarded-for</code>, resolve
         city/region/country via ipapi.co (or MaxMind at higher volume), store
         location fields plus a <strong>hashed IP</strong>. Reliable for country
-        and often city; VPNs reduce accuracy. Suitable for waitlist analytics —
+        and often city; VPNs reduce accuracy. Suitable for waitlist analytics -
         not a substitute for declared residency in regulated flows.
       </p>
     ),
@@ -141,7 +138,9 @@ const QA: { q: string; a: ReactNode }[] = [
     a: (
       <ul className="list-disc space-y-2 pl-5">
         <li>Stable user IDs and immutable ledger + referral history</li>
-        <li>Fields map 1:1 to future app accounts (no dead-end waitlist schema)</li>
+        <li>
+          Fields map 1:1 to future app accounts (no dead-end waitlist schema)
+        </li>
         <li>
           Replace <code className="mono">dashboardToken</code> with real auth
           without rewriting rewards
@@ -154,18 +153,12 @@ const QA: { q: string; a: ReactNode }[] = [
   {
     q: "8. Please share examples of similar work.",
     a: (
-      <>
-        <p>
-          <strong>Primary artifact — {APP_NAME} (this demo):</strong> sole
-          implementer of schema, reward engine, anti-fraud, email outbox, admin
-          metrics, integrity tree, and proposal docs. Stack: Next.js, Prisma,
-          SQLite/Turso, Resend, SSE.
-        </p>
-        <p className="mt-3 text-sm text-[var(--muted)]">
-          Add 1–2 prior projects in PROPOSAL.md before submitting your
-          application.
-        </p>
-      </>
+      <p>
+        <strong>Primary artifact - {APP_NAME} (this demo):</strong> sole
+        implementer of schema, reward engine, anti-fraud, email outbox, admin
+        metrics, integrity tree, and proposal docs. Stack: Next.js, Prisma,
+        SQLite/Turso, Resend, SSE.
+      </p>
     ),
   },
   {

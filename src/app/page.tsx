@@ -11,7 +11,7 @@ export default function HomePage() {
           {APP_NAME}
         </p>
         <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-tight md:text-6xl">
-          Fintech waitlist backend — referral, rewards, integrity — demonstrated
+          Fintech waitlist backend - referral, rewards, integrity - demonstrated
           live.
         </h1>
         <p className="mt-5 max-w-xl text-lg leading-relaxed text-[var(--muted)]">

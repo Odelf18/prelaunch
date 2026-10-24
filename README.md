@@ -1,6 +1,6 @@
 # Prelaunch Engine
 
-Interactive MVP demo of a **fintech waitlist + referral + rewards** backend — built to accompany a job proposal.
+Interactive MVP demo of a **fintech waitlist + referral + rewards** backend - built to accompany a job proposal.
 
 ## Live surfaces
 
@@ -47,10 +47,10 @@ Open [http://localhost:3000/demo](http://localhost:3000/demo) and click **Simula
 
 See `.env.example`. Important vars:
 
-- `DATABASE_URL` — local SQLite
-- `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` — persistent prod DB on Vercel
-- `RESEND_API_KEY` — real welcome emails
-- `NEXT_PUBLIC_APP_URL` — absolute links in emails / referral URLs
+- `DATABASE_URL` - local SQLite
+- `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` - persistent prod DB on Vercel
+- `RESEND_API_KEY` - real welcome emails
+- `NEXT_PUBLIC_APP_URL` - absolute links in emails / referral URLs
 
 Without Turso on Vercel, the app copies `prisma/demo-seed.db` into `/tmp` (ephemeral but enough for recruiter demos). Prefer Turso for persistence.
 

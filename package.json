@@ -9,7 +9,7 @@
     "lint": "eslint",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "postinstall": "prisma generate",
+    "postinstall": "DATABASE_URL=\"${DATABASE_URL:-file:./dev.db}\" prisma generate",
     "db:seed-file": "tsx prisma/seed.ts && cp prisma/dev.db prisma/demo-seed.db"
   },
   "dependencies": {

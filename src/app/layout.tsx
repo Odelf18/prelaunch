@@ -16,7 +16,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: `${APP_NAME} — Waitlist Backend Demo`,
+  title: `${APP_NAME} - Waitlist Backend Demo`,
   description: APP_TAGLINE,
 };
 
@@ -29,8 +29,14 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${instrument.variable} ${jetbrains.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="relative z-10 min-h-full flex flex-col">{children}</body>
+      <body
+        className="relative z-10 min-h-full flex flex-col"
+        suppressHydrationWarning
+      >
+        {children}
+      </body>
     </html>
   );
 }

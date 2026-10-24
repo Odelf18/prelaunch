@@ -38,7 +38,7 @@ export function DashboardClient({ token }: { token: string }) {
       <div>
         <p className="text-sm font-medium">Complete your profile</p>
         <p className="text-xs text-[var(--muted)]">
-          Earn +400 coins once — name and phone required.
+          Earn +400 coins once - name and phone required.
         </p>
       </div>
       <label className="block text-sm">

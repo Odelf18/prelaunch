@@ -50,12 +50,12 @@ export function LedgerPanel({
                       </span>
                     </td>
                     <td className="mono px-5 py-4 text-lg tabular-nums">
-                      {r.amountCoins ? `+${r.amountCoins}` : "—"}
+                      {r.amountCoins ? `+${r.amountCoins}` : "-"}
                     </td>
                     <td className="mono px-5 py-4 text-lg tabular-nums">
                       {r.amountCents
                         ? `$${(r.amountCents / 100).toFixed(0)}`
-                        : "—"}
+                        : "-"}
                     </td>
                     <td className="mono break-all px-5 py-4 text-sm text-[var(--muted)]">
                       {r.idempotencyKey}
@@ -68,7 +68,7 @@ export function LedgerPanel({
         </table>
         {rows.length === 0 && (
           <p className="p-10 text-center text-lg text-[var(--muted)]">
-            Ledger is empty — rewards will land here as rows.
+            Ledger is empty - rewards will land here as rows.
           </p>
         )}
       </div>

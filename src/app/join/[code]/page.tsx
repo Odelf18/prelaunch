@@ -46,7 +46,7 @@ export default function JoinPage() {
         </h1>
         <p className="mt-2 text-[var(--muted)]">
           Code{" "}
-          <span className="mono text-[var(--accent)]">{code}</span> — you&apos;ll
+          <span className="mono text-[var(--accent)]">{code}</span> - you&apos;ll
           get 100 coins on signup.
         </p>
         <form onSubmit={submit} className="panel mt-8 space-y-4 rounded-2xl p-5">

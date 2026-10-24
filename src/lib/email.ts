@@ -46,7 +46,7 @@ export async function sendWelcomeEmail(input: {
   const html = `
     <div style="font-family: system-ui, sans-serif; max-width: 560px; margin: 0 auto;">
       <h1 style="font-size: 22px;">You're on the ${APP_NAME} waitlist</h1>
-      <p>Welcome — your account is live with <strong>${input.coins} coins</strong>.</p>
+      <p>Welcome - your account is live with <strong>${input.coins} coins</strong>.</p>
       <p><a href="${dashboardUrl}">Open your personalized dashboard</a></p>
       <h2 style="font-size: 16px;">How rewards work</h2>
       <ul>
@@ -77,7 +77,7 @@ export async function sendWelcomeEmail(input: {
     const result = await resend.emails.send({
       from,
       to: input.email,
-      subject: `Welcome to ${APP_NAME} — your dashboard is ready`,
+      subject: `Welcome to ${APP_NAME} - your dashboard is ready`,
       html,
     });
     const providerId =

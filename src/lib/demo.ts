@@ -42,7 +42,7 @@ function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]!;
 }
 
-/** No auto-seed — demo always starts empty unless the user clicks. */
+/** No auto-seed - demo always starts empty unless the user clicks. */
 export async function ensureEmptyReady() {
   const count = await prisma.user.count();
   return { count };
@@ -217,14 +217,229 @@ export async function resetDemo() {
 
   publishEvent({
     type: "stats",
-    message: "Database wiped — empty slate. Create the first user to begin.",
+    message: "Database wiped - empty slate. Create the first user to begin.",
     sql: "DELETE FROM User; DELETE FROM Referral; DELETE FROM RewardLedger; …",
   });
 
   return { count: 0 };
 }
 
-/** @deprecated kept for any leftover imports — no longer seeds fake users */
+type DemoStep = {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  sql?: string;
+  data?: Record<string, unknown>;
+};
+
+async function createDemoPerson(input: {
+  first: string;
+  last: string;
+  referralCode?: string | null;
+  completeProfile?: boolean;
+  email?: string;
+  phone?: string;
+  geo?: (typeof CITIES)[number];
+}) {
+  const email =
+    input.email ??
+    `${input.first.toLowerCase()}.${input.last.toLowerCase()}.${nano()}@demo.mail`;
+  const geo = input.geo ?? pick(CITIES);
+  const referralCode = input.referralCode?.trim() || null;
+  const mode: "root" | "referred" = referralCode ? "referred" : "root";
+
+  const result = await signupUser({
+    email,
+    referralCode,
+    simulate: true,
+    simulateGeo: geo,
+  });
+
+  let profile = null;
+  if (input.completeProfile !== false) {
+    const fullName = `${input.first} ${input.last}`;
+    const phone =
+      input.phone ??
+      `+1-555-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+    profile = await completeProfile({
+      userId: result.user.id,
+      fullName,
+      phone,
+    });
+  }
+
+  return {
+    ...result,
+    profile,
+    referrerCode: referralCode,
+    mode,
+    displayName: `${input.first} ${input.last}`,
+  };
+}
+
+function collectStepsSince(
+  marker: number,
+  mode: "root" | "referred" = "root",
+): DemoStep[] {
+  const raw = recentEvents(80).filter((e) => e.ts >= marker - 50);
+  const steps: DemoStep[] = [];
+  for (const e of raw) {
+    const prev = steps[steps.length - 1];
+    if (prev && prev.type === e.type && e.type === "email_queued") {
+      prev.message = e.message;
+      prev.sql = e.sql;
+      continue;
+    }
+    steps.push({
+      id: e.id,
+      type: e.type,
+      title: stepTitle(e.type, steps.length, mode),
+      message: e.message,
+      sql: e.sql,
+      data: e.data,
+    });
+  }
+  return steps;
+}
+
+/** Branched mock tree of 6 people (wipes first for a clean graph). */
+export async function buildMockTree() {
+  await resetDemo();
+  clearEvents();
+  const marker = Date.now();
+
+  // A
+  // ├── B
+  // │   ├── D
+  // │   └── E
+  // └── C
+  //     └── F
+  const plan: {
+    first: string;
+    last: string;
+    parent: number | null;
+    geo: (typeof CITIES)[number];
+  }[] = [
+    {
+      first: "Alex",
+      last: "Founder",
+      parent: null,
+      geo: { city: "San Francisco", region: "California", country: "United States" },
+    },
+    {
+      first: "Jordan",
+      last: "Early",
+      parent: 0,
+      geo: { city: "Austin", region: "Texas", country: "United States" },
+    },
+    {
+      first: "Sam",
+      last: "Growth",
+      parent: 0,
+      geo: { city: "London", region: "England", country: "United Kingdom" },
+    },
+    {
+      first: "Riley",
+      last: "Network",
+      parent: 1,
+      geo: { city: "Berlin", region: "Berlin", country: "Germany" },
+    },
+    {
+      first: "Casey",
+      last: "Friend",
+      parent: 1,
+      geo: { city: "Toronto", region: "Ontario", country: "Canada" },
+    },
+    {
+      first: "Quinn",
+      last: "Wave",
+      parent: 2,
+      geo: { city: "Lisbon", region: "Lisbon", country: "Portugal" },
+    },
+  ];
+
+  const created: Awaited<ReturnType<typeof createDemoPerson>>[] = [];
+  for (const person of plan) {
+    const referralCode =
+      person.parent === null
+        ? null
+        : created[person.parent]!.user.referralCode;
+    const personResult = await createDemoPerson({
+      first: person.first,
+      last: person.last,
+      referralCode,
+      completeProfile: true,
+      geo: person.geo,
+    });
+    created.push(personResult);
+  }
+
+  publishEvent({
+    type: "stats",
+    message: `Mock referral tree ready - ${created.length} users, branched graph`,
+    sql: `-- mock tree: founder → 2 children → 3 grandchildren`,
+  });
+
+  return {
+    count: created.length,
+    users: created.map((c) => ({
+      email: c.user.email,
+      referralCode: c.user.referralCode,
+      mode: c.mode,
+    })),
+    steps: collectStepsSince(marker, "referred").slice(0, 12),
+  };
+}
+
+/** Manual signup with optional referral code + optional profile completion. */
+export async function manualSignup(input: {
+  email: string;
+  referralCode?: string | null;
+  fullName?: string;
+  phone?: string;
+}) {
+  clearEvents();
+  const marker = Date.now();
+  const email = input.email.toLowerCase().trim();
+  const referralCode = input.referralCode?.trim() || null;
+  const mode: "root" | "referred" = referralCode ? "referred" : "root";
+
+  const nameParts = (input.fullName?.trim() || email.split("@")[0] || "Demo User")
+    .split(/\s+/)
+    .filter(Boolean);
+  const first = nameParts[0] ?? "Demo";
+  const last = nameParts.slice(1).join(" ") || "User";
+
+  const result = await signupUser({
+    email,
+    referralCode,
+    simulate: true,
+    simulateGeo: pick(CITIES),
+  });
+
+  let profile = null;
+  const fullName = input.fullName?.trim();
+  const phone = input.phone?.trim();
+  if (fullName && phone) {
+    profile = await completeProfile({
+      userId: result.user.id,
+      fullName,
+      phone,
+    });
+  }
+
+  return {
+    ...result,
+    profile,
+    referrerCode: referralCode,
+    mode,
+    displayName: fullName || `${first} ${last}`,
+    steps: collectStepsSince(marker, mode),
+  };
+}
+
+/** @deprecated kept for any leftover imports - no longer seeds fake users */
 export async function ensureSeeded() {
   return ensureEmptyReady();
 }

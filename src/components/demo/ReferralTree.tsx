@@ -164,7 +164,7 @@ export function ReferralTree({
             </filter>
           </defs>
 
-          {/* Edges first (under nodes) — solid stroke, no pathLength (was invisible) */}
+          {/* Edges first (under nodes) - solid stroke, no pathLength (was invisible) */}
           {edges.map((e) => (
             <g key={e.id}>
               <motion.path
@@ -261,7 +261,7 @@ export function ReferralTree({
                   fill="#3ddea8"
                   style={{ fontSize: 12, fontFamily: "var(--font-mono)", opacity: 0.9 }}
                 >
-                  {n.city ?? "—"} · +{n.coins}c
+                  {n.city ?? "-"} · +{n.coins}c
                 </text>
                 {n.nodeHash && (
                   <text

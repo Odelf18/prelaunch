@@ -11,4 +11,4 @@ export const MILESTONES = [
 ] as const;
 
 export const APP_NAME = "Prelaunch Engine";
-export const APP_TAGLINE = "Waitlist · referrals · rewards — live.";
+export const APP_TAGLINE = "Waitlist · referrals · rewards - live.";

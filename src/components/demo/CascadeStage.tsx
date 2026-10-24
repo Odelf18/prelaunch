@@ -44,7 +44,7 @@ export function CascadeStage({
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">
             {empty && steps.length === 0
-              ? "Empty database — waiting for the first write"
+              ? "Empty database - waiting for the first write"
               : active
                 ? active.title
                 : "Cascade complete"}
@@ -52,8 +52,8 @@ export function CascadeStage({
           {mode && (
             <p className="mt-2 text-base text-[var(--muted)]">
               {mode === "root"
-                ? "Organic signup (no referral code) — founder of the tree."
-                : "Referred signup — parent link + rewards fire together."}
+                ? "Organic signup (no referral code) - founder of the tree."
+                : "Referred signup - parent link + rewards fire together."}
             </p>
           )}
         </div>
@@ -117,7 +117,7 @@ export function CascadeStage({
               <div>
                 <p className="text-lg text-[var(--muted)]">
                   {empty
-                    ? "Hit the green button — the first INSERT will appear here in large type."
+                    ? "Hit the green button - the first INSERT will appear here in large type."
                     : "Run another signup to replay the cascade in this theater."}
                 </p>
               </div>

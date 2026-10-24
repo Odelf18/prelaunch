@@ -8,6 +8,7 @@ import { LiveFeed } from "./LiveFeed";
 import { LedgerPanel } from "./LedgerPanel";
 import { AdminStrip } from "./AdminStrip";
 import { CascadeStage, type CascadeStep } from "./CascadeStage";
+import { ManualSignupForm } from "./ManualSignupForm";
 import type { AdminStats, FeedEvent, LedgerRow, TreeNode } from "./types";
 
 export function DemoShell() {
@@ -171,6 +172,51 @@ export function DemoShell() {
     }
   }
 
+  async function applyCascadeResponse(
+    data: {
+      result?: {
+        user?: { id?: string; email?: string };
+        mode?: "root" | "referred";
+        referrerCode?: string | null;
+      };
+      steps?: CascadeStep[];
+      stats?: AdminStats;
+      tree?: TreeNode[];
+      ledger?: LedgerRow[];
+      events?: FeedEvent[];
+      message?: string;
+    },
+    opts?: { play?: boolean; message?: string },
+  ) {
+    const prevLedgerIds = new Set(ledger.map((l) => l.id));
+    applyState(data);
+    const userId = data.result?.user?.id;
+    const nextMode = data.result?.mode ?? null;
+    if (nextMode) setMode(nextMode);
+    if (userId) setHighlightId(userId);
+
+    const newLedger = data.ledger ?? [];
+    const fresh = new Set(
+      newLedger.filter((l) => !prevLedgerIds.has(l.id)).map((l) => l.id),
+    );
+    setFlashIds(fresh);
+    setTimeout(() => setFlashIds(new Set()), 3500);
+
+    setLastMessage(
+      opts?.message ??
+        (nextMode === "root"
+          ? `Founder created: ${data.result?.user?.email}`
+          : `Referred signup: ${data.result?.user?.email} ← ${data.result?.referrerCode}`),
+    );
+
+    if (opts?.play !== false) {
+      await playSteps(data.steps ?? []);
+    } else {
+      setSteps(data.steps ?? []);
+      setActiveIndex((data.steps?.length ?? 0) - 1);
+    }
+  }
+
   async function reset() {
     if (busy) return;
     setBusy(true);
@@ -184,11 +230,72 @@ export function DemoShell() {
       setSteps([]);
       setActiveIndex(-1);
       setMode(null);
-      setLastMessage("Wiped — back to an empty database.");
+      setLastMessage("Wiped - back to an empty database.");
       setEvents(data.events ?? []);
       sessionStorage.setItem("prelaunch_demo_wiped_v3", "1");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Reset failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function runMockTree() {
+    if (!ready || busy) return;
+    setBusy(true);
+    setError(null);
+    setLastMessage(null);
+    setMode(null);
+    setSteps([]);
+    setActiveIndex(-1);
+    try {
+      const res = await fetch("/api/demo/mock-tree", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Mock tree failed");
+      sessionStorage.setItem("prelaunch_demo_wiped_v3", "1");
+      await applyCascadeResponse(data, {
+        play: false,
+        message: `Mock tree ready - ${data.result?.count ?? 6} users with referral links`,
+      });
+      const last = (data.tree as TreeNode[] | undefined)?.[
+        (data.tree?.length ?? 1) - 1
+      ];
+      if (last) setHighlightId(last.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Mock tree failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function runManual(input: {
+    email: string;
+    referralCode: string;
+    fullName: string;
+    phone: string;
+  }) {
+    if (!ready || busy) return;
+    setBusy(true);
+    setError(null);
+    setLastMessage(null);
+    setSteps([]);
+    setActiveIndex(-1);
+    try {
+      const res = await fetch("/api/demo/manual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: input.email,
+          referralCode: input.referralCode || null,
+          fullName: input.fullName || null,
+          phone: input.phone || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Manual signup failed");
+      await applyCascadeResponse(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Manual signup failed");
     } finally {
       setBusy(false);
     }
@@ -204,6 +311,8 @@ export function DemoShell() {
         ? "Create first user (empty DB)"
         : "Simulate referred signup";
 
+  const suggestedCodes = tree.map((n) => n.referralCode).filter(Boolean);
+
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-10 px-4 pb-24 md:px-8">
       <section className="relative pt-4 md:pt-8">
@@ -214,9 +323,8 @@ export function DemoShell() {
           Start from zero. Watch every write land.
         </h1>
         <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[var(--muted)] md:text-xl">
-          No fake seed users. First click creates the founder. Next clicks grow
-          the referral tree — geo, ledger, email, integrity hash — in a readable
-          cascade.
+          Simulate one signup, generate a full mock referral tree, or create a
+          profile manually with a referral code.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -227,6 +335,14 @@ export function DemoShell() {
             onClick={() => runSimulate()}
           >
             {primaryLabel}
+          </button>
+          <button
+            type="button"
+            className="ghost-btn rounded-2xl px-5 py-4 text-base"
+            disabled={!ready || busy}
+            onClick={runMockTree}
+          >
+            Generate mock tree (6)
           </button>
           <button
             type="button"
@@ -265,14 +381,20 @@ export function DemoShell() {
         {empty && !busy && (
           <div className="panel mt-8 rounded-2xl border-[var(--accent)]/30 px-6 py-5">
             <p className="text-base text-[var(--text)] md:text-lg">
-              Database is empty. Your first click inserts the root user (+100
-              coins, referral code, welcome email). After that, each click
-              simulates someone joining through the latest referral link (+500
-              coins + $20 to the referrer).
+              Database is empty. Create the first user, generate a 6-person mock
+              tree, or fill the manual form below.
             </p>
           </div>
         )}
       </section>
+
+      <AdminStrip stats={stats} />
+
+      <ManualSignupForm
+        disabled={!ready || busy}
+        suggestedCodes={suggestedCodes}
+        onSubmit={runManual}
+      />
 
       <CascadeStage
         steps={steps}
@@ -287,8 +409,6 @@ export function DemoShell() {
         <LiveFeed events={events} />
         <LedgerPanel rows={ledger} flashIds={flashIds} />
       </section>
-
-      <AdminStrip stats={stats} />
 
       <section className="panel flex flex-wrap items-center justify-between gap-5 rounded-3xl px-6 py-6">
         <div>

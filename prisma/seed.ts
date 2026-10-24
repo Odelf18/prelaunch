@@ -2,7 +2,7 @@ import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 
 /**
- * Demo starts empty — this seed only wipes tables so demo-seed.db
+ * Demo starts empty - this seed only wipes tables so demo-seed.db
  * ships as a clean schema for Vercel /tmp bootstrap.
  */
 const prisma = new PrismaClient();
