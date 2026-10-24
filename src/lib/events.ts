@@ -73,3 +73,9 @@ export function subscribe(listener: Listener): () => void {
 export function recentEvents(limit = 50): DemoEvent[] {
   return buffer().slice(-limit);
 }
+
+export function clearEvents() {
+  if (globalStore.__demoEventBuffer) {
+    globalStore.__demoEventBuffer.length = 0;
+  }
+}

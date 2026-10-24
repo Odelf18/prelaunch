@@ -132,3 +132,16 @@ a {
 .event-fraud_blocked { color: var(--danger); }
 .event-stats { color: var(--muted); }
 .event-error { color: var(--danger); }
+
+/* Readable scrollbars in dense panels */
+.panel ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.panel ::-webkit-scrollbar-thumb {
+  background: rgba(120, 160, 200, 0.25);
+  border-radius: 999px;
+}
+.panel ::-webkit-scrollbar-track {
+  background: transparent;
+}

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { simulateFraud, simulateReferredSignup } from "@/lib/demo";
+import { simulateFraud, simulateSignup } from "@/lib/demo";
 import { getAdminStats, getReferralTree, getLedgerFeed } from "@/lib/waitlist";
+import { recentEvents } from "@/lib/events";
 
 const bodySchema = z.object({
   completeProfile: z.boolean().optional(),
@@ -18,12 +19,19 @@ export async function POST(req: Request) {
       const [stats, tree, ledger] = await Promise.all([
         getAdminStats(),
         getReferralTree(),
-        getLedgerFeed(30),
+        getLedgerFeed(50),
       ]);
-      return NextResponse.json({ fraud, stats, tree, ledger });
+      return NextResponse.json({
+        fraud,
+        steps: fraud.steps,
+        stats,
+        tree,
+        ledger,
+        events: recentEvents(50),
+      });
     }
 
-    const result = await simulateReferredSignup({
+    const result = await simulateSignup({
       completeProfile: body.completeProfile,
       referrerCode: body.referrerCode,
     });
@@ -31,10 +39,17 @@ export async function POST(req: Request) {
     const [stats, tree, ledger] = await Promise.all([
       getAdminStats(),
       getReferralTree(),
-      getLedgerFeed(30),
+      getLedgerFeed(50),
     ]);
 
-    return NextResponse.json({ result, stats, tree, ledger });
+    return NextResponse.json({
+      result,
+      steps: result.steps,
+      stats,
+      tree,
+      ledger,
+      events: recentEvents(50),
+    });
   } catch (err) {
     console.error(err);
     return NextResponse.json(

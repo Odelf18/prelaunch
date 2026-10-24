@@ -40,13 +40,6 @@ export async function sendWelcomeEmail(input: {
     },
   });
 
-  publishEvent({
-    type: "email_queued",
-    message: `Welcome email queued → ${input.email}`,
-    sql: `INSERT INTO EmailOutbox (template, toEmail, status) VALUES ('welcome', '${input.email}', 'pending');`,
-    data: { outboxId: outbox.id, dashboardUrl },
-  });
-
   const resend = getResend();
   const from = process.env.EMAIL_FROM ?? "Prelaunch Engine <onboarding@resend.dev>";
 
@@ -73,9 +66,9 @@ export async function sendWelcomeEmail(input: {
     });
     publishEvent({
       type: "email_queued",
-      message: `Email mocked (no RESEND_API_KEY) → ${input.email}`,
-      sql: `UPDATE EmailOutbox SET status='mocked', sentAt=NOW() WHERE id='${outbox.id}';`,
-      data: { outboxId: mocked.id, mode: "mock" },
+      message: `Welcome email mocked → ${input.email} (dashboard link ready)`,
+      sql: `INSERT INTO EmailOutbox …; UPDATE EmailOutbox SET status='mocked' WHERE id='${outbox.id}';`,
+      data: { outboxId: mocked.id, mode: "mock", dashboardUrl },
     });
     return { mode: "mock" as const, outboxId: mocked.id, dashboardUrl };
   }
@@ -92,6 +85,12 @@ export async function sendWelcomeEmail(input: {
     await prisma.emailOutbox.update({
       where: { id: outbox.id },
       data: { status: "sent", sentAt: new Date(), providerId },
+    });
+    publishEvent({
+      type: "email_queued",
+      message: `Welcome email sent via Resend → ${input.email}`,
+      sql: `INSERT INTO EmailOutbox …; UPDATE EmailOutbox SET status='sent', providerId='${providerId}';`,
+      data: { outboxId: outbox.id, mode: "resend", dashboardUrl },
     });
     return { mode: "resend" as const, outboxId: outbox.id, dashboardUrl };
   } catch (err) {

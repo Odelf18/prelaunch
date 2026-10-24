@@ -14,11 +14,10 @@ export function resolveSqliteUrl(): string | null {
       path.join(process.cwd(), "prisma", "demo-seed.db"),
       path.join(process.cwd(), "prisma", "dev.db"),
     ];
-    if (!fs.existsSync(tmp)) {
-      const seed = seedCandidates.find((p) => fs.existsSync(p));
-      if (seed) {
-        fs.copyFileSync(seed, tmp);
-      }
+    // Always bootstrap from the empty seed so cold starts don't revive old fake users
+    const seed = seedCandidates.find((p) => fs.existsSync(p));
+    if (seed) {
+      fs.copyFileSync(seed, tmp);
     }
     return `file:${tmp}`;
   }

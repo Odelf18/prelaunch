@@ -11,22 +11,24 @@ export function LedgerPanel({
   flashIds?: Set<string>;
 }) {
   return (
-    <div className="panel flex h-full min-h-[280px] flex-col overflow-hidden rounded-2xl">
-      <div className="border-b border-[var(--line)] px-4 py-3">
-        <p className="mono text-[10px] uppercase tracking-[0.22em] text-[var(--muted)]">
+    <div className="panel flex h-full min-h-[520px] flex-col overflow-hidden rounded-3xl">
+      <div className="border-b border-[var(--line)] px-6 py-5">
+        <p className="mono text-xs uppercase tracking-[0.28em] text-[var(--muted)]">
           Reward ledger
         </p>
-        <p className="text-sm text-[var(--muted)]">Idempotent DB writes</p>
+        <p className="mt-1 text-base text-[var(--muted)] md:text-lg">
+          Append-only credits · unique idempotency keys
+        </p>
       </div>
-      <div className="flex-1 overflow-x-auto overflow-y-auto">
-        <table className="w-full min-w-[420px] border-collapse mono text-[11px]">
-          <thead className="sticky top-0 bg-[var(--bg-panel-solid)] text-left text-[var(--muted)]">
-            <tr>
-              <th className="px-3 py-2 font-medium">type</th>
-              <th className="px-3 py-2 font-medium">user</th>
-              <th className="px-3 py-2 font-medium">coins</th>
-              <th className="px-3 py-2 font-medium">cash</th>
-              <th className="px-3 py-2 font-medium">key</th>
+      <div className="flex-1 overflow-auto">
+        <table className="w-full min-w-[640px] border-collapse text-left text-sm md:text-base">
+          <thead className="sticky top-0 bg-[var(--bg-panel-solid)] text-[var(--muted)]">
+            <tr className="mono text-xs uppercase tracking-[0.14em]">
+              <th className="px-5 py-4 font-medium">Type</th>
+              <th className="px-5 py-4 font-medium">User</th>
+              <th className="px-5 py-4 font-medium">Coins</th>
+              <th className="px-5 py-4 font-medium">Cash</th>
+              <th className="px-5 py-4 font-medium">Idempotency key</th>
             </tr>
           </thead>
           <tbody>
@@ -40,17 +42,22 @@ export function LedgerPanel({
                     animate={{ opacity: 1, y: 0 }}
                     className={`ledger-row border-t border-[var(--line)] ${isNew ? "new" : ""}`}
                   >
-                    <td className="px-3 py-2 text-[var(--accent)]">{r.type}</td>
-                    <td className="max-w-[120px] truncate px-3 py-2">
-                      {r.user.email.split("@")[0]}
+                    <td className="mono px-5 py-4 text-[var(--accent)]">{r.type}</td>
+                    <td className="px-5 py-4">
+                      <span className="block break-all">{r.user.email}</span>
+                      <span className="mono text-sm text-[var(--muted)]">
+                        {r.user.referralCode}
+                      </span>
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="mono px-5 py-4 text-lg tabular-nums">
                       {r.amountCoins ? `+${r.amountCoins}` : "—"}
                     </td>
-                    <td className="px-3 py-2">
-                      {r.amountCents ? `$${(r.amountCents / 100).toFixed(0)}` : "—"}
+                    <td className="mono px-5 py-4 text-lg tabular-nums">
+                      {r.amountCents
+                        ? `$${(r.amountCents / 100).toFixed(0)}`
+                        : "—"}
                     </td>
-                    <td className="max-w-[140px] truncate px-3 py-2 text-[var(--muted)]">
+                    <td className="mono break-all px-5 py-4 text-sm text-[var(--muted)]">
                       {r.idempotencyKey}
                     </td>
                   </motion.tr>
@@ -60,7 +67,9 @@ export function LedgerPanel({
           </tbody>
         </table>
         {rows.length === 0 && (
-          <p className="p-6 text-center text-sm text-[var(--muted)]">No ledger rows yet.</p>
+          <p className="p-10 text-center text-lg text-[var(--muted)]">
+            Ledger is empty — rewards will land here as rows.
+          </p>
         )}
       </div>
     </div>
